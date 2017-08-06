@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
-	"net/http"
 	"html/template"
+	"net/http"
 	"strconv"
-	"time"
 	"sync"
+	"time"
 )
 
 type JoinMessage struct {
@@ -19,14 +19,14 @@ type ChatMessageIn struct {
 }
 
 type ChatMessageOut struct {
-	name string
+	name    string
 	message string
-	time string
+	time    string
 }
 
 type ChatConn struct {
 	name string
-    conn *websocket.Conn
+	conn *websocket.Conn
 }
 
 var allConnsMutex sync.RWMutex
@@ -79,48 +79,52 @@ func handleChat(conn *websocket.Conn) {
 	}
 
 	allConnsMutex.Lock()
-	allConns = append(allConns, ChatConn{ join.name, conn })
-    fmt.Printf("len = %d\n", len(allConns))
+	allConns = append(allConns, ChatConn{join.name, conn})
+	fmt.Printf("len = %d\n", len(allConns))
 
 	for _, c := range allConns {
-		if c.conn == conn { continue }
-		if err = c.conn.WriteJSON(ChatMessageOut{ "Server", join.name + " has joined.", getUnixTimeStr() }); err != nil {
+		if c.conn == conn {
+			continue
+		}
+		if err = c.conn.WriteJSON(ChatMessageOut{"Server", join.name + " has joined.", getUnixTimeStr()}); err != nil {
 			fmt.Println(err)
 		}
 	}
 	allConnsMutex.Unlock()
 
-    for {
+	for {
 		msg := ChatMessageIn{}
 
 		err = conn.ReadJSON(&msg)
 		if err != nil {
 			fmt.Println("Error reading json.", err)
-            break
+			break
 		}
 
 		fmt.Printf("Got message: %#v\n", msg)
 
-		out := ChatMessageOut{ join.name, msg.message, getUnixTimeStr() }
+		out := ChatMessageOut{join.name, msg.message, getUnixTimeStr()}
 
 		allConnsMutex.Lock()
-        for _, c := range allConns {
-            if c.conn == conn { continue }
-            if err = c.conn.WriteJSON(out); err != nil {
-                fmt.Println(err)
-            }
-        }
+		for _, c := range allConns {
+			if c.conn == conn {
+				continue
+			}
+			if err = c.conn.WriteJSON(out); err != nil {
+				fmt.Println(err)
+			}
+		}
 		allConnsMutex.Unlock()
 	}
 
 	allConnsMutex.Lock()
-    for i, c := range allConns {
-        if c.conn == conn {
-            allConns[i] = allConns[len(allConns) - 1]
-            allConns = allConns[:len(allConns) - 1]
-            break
-        }
-    }
+	for i, c := range allConns {
+		if c.conn == conn {
+			allConns[i] = allConns[len(allConns)-1]
+			allConns = allConns[:len(allConns)-1]
+			break
+		}
+	}
 	allConnsMutex.Unlock()
 
 }
