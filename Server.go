@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"strconv"
 	"time"
+	"sync"
 )
 
 type JoinMessage struct {
@@ -28,6 +29,7 @@ type ChatConn struct {
     conn *websocket.Conn
 }
 
+var allConnsMutex sync.RWMutex
 var allConns []ChatConn
 
 func getUnixTimeStr() string {
@@ -76,6 +78,7 @@ func handleChat(conn *websocket.Conn) {
 		return
 	}
 
+	allConnsMutex.Lock()
 	allConns = append(allConns, ChatConn{ join.name, conn })
     fmt.Printf("len = %d\n", len(allConns))
 
@@ -85,6 +88,7 @@ func handleChat(conn *websocket.Conn) {
 			fmt.Println(err)
 		}
 	}
+	allConnsMutex.Unlock()
 
     for {
 		msg := ChatMessageIn{}
@@ -98,14 +102,18 @@ func handleChat(conn *websocket.Conn) {
 		fmt.Printf("Got message: %#v\n", msg)
 
 		out := ChatMessageOut{ join.name, msg.message, getUnixTimeStr() }
+
+		allConnsMutex.Lock()
         for _, c := range allConns {
             if c.conn == conn { continue }
             if err = c.conn.WriteJSON(out); err != nil {
                 fmt.Println(err)
             }
         }
+		allConnsMutex.Unlock()
 	}
 
+	allConnsMutex.Lock()
     for i, c := range allConns {
         if c.conn == conn {
             allConns[i] = allConns[len(allConns) - 1]
@@ -113,5 +121,6 @@ func handleChat(conn *websocket.Conn) {
             break
         }
     }
+	allConnsMutex.Unlock()
 
 }
