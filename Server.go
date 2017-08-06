@@ -5,10 +5,33 @@ import (
 	"github.com/gorilla/websocket"
 	"net/http"
 	"html/template"
+	"strconv"
+	"time"
 )
 
-type msg struct {
-	Num int
+type JoinMessage struct {
+	name string
+}
+
+type ChatMessageIn struct {
+	message string
+}
+
+type ChatMessageOut struct {
+	name string
+	message string
+	time string
+}
+
+type ChatConn struct {
+	name string
+    conn *websocket.Conn
+}
+
+var allConns []ChatConn
+
+func getUnixTimeStr() string {
+	return strconv.Itoa(int(time.Now().Unix()))
 }
 
 func main() {
@@ -40,22 +63,55 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not open websocket connection", http.StatusBadRequest)
 	}
 
-	go echo(conn)
+	go handleChat(conn)
 }
 
-func echo(conn *websocket.Conn) {
-	for {
-		m := msg{}
+func handleChat(conn *websocket.Conn) {
+	defer conn.Close()
 
-		err := conn.ReadJSON(&m)
-		if err != nil {
-			fmt.Println("Error reading json.", err)
-		}
+	join := JoinMessage{}
+	err := conn.ReadJSON(&join)
+	if err != nil {
+		fmt.Println("Error reading json.", err)
+		return
+	}
 
-		fmt.Printf("Got message: %#v\n", m)
+	allConns = append(allConns, ChatConn{ join.name, conn })
+    fmt.Printf("len = %d\n", len(allConns))
 
-		if err = conn.WriteJSON(m); err != nil {
+	for _, c := range allConns {
+		if c.conn == conn { continue }
+		if err = c.conn.WriteJSON(ChatMessageOut{ "Server", join.name + " has joined.", getUnixTimeStr() }); err != nil {
 			fmt.Println(err)
 		}
 	}
+
+    for {
+		msg := ChatMessageIn{}
+
+		err = conn.ReadJSON(&msg)
+		if err != nil {
+			fmt.Println("Error reading json.", err)
+            break
+		}
+
+		fmt.Printf("Got message: %#v\n", msg)
+
+		out := ChatMessageOut{ join.name, msg.message, getUnixTimeStr() }
+        for _, c := range allConns {
+            if c.conn == conn { continue }
+            if err = c.conn.WriteJSON(out); err != nil {
+                fmt.Println(err)
+            }
+        }
+	}
+
+    for i, c := range allConns {
+        if c.conn == conn {
+            allConns[i] = allConns[len(allConns) - 1]
+            allConns = allConns[:len(allConns) - 1]
+            break
+        }
+    }
+
 }
