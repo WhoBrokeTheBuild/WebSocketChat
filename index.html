@@ -1,3 +1,10 @@
+<!--
+Sign-on: { "name": "Their Name" }
+Send message: { "message": "Their Message" }
+Receive message { "name": "Their Name", "message": "Their Message", "time": "Timestamp" }
+-->
+
+
 <html>
 <head>
     <title>WebSocket demo</title>
@@ -6,8 +13,8 @@
 
     <div>
         <form>
-            <label for="numberfield">Number</label>
-            <input type="text" id="message" placeholder="Hello World!"/><br />
+            <label for="nameInput">Name:</label>
+            <input type="text" id="name" placeholder="John Jacob Jingleheimer Schmidt"/><br />
             <button type="button" id="sendBtn">Send</button>
         </form>
     </div>
@@ -39,7 +46,7 @@
             }
             $("#sendBtn").click(function (e) {
                 e.preventDefault();
-                ws.send({ String: $("#message").val() });
+                ws.send({ String: $("name") });
             });
         });
     </script>
