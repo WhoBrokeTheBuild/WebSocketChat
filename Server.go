@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"strings"
 )
 
 type JoinMessage struct {
@@ -103,20 +104,37 @@ func handleChat(conn *websocket.Conn) {
 			break
 		}
 
-		fmt.Printf("Got message: %#v\n", msg)
+		if strings.HasPrefix(msg.Message, "/") {
+			out := ChatMessageOut{ "Server", "Command Not Found", getUnixTimeStr() }
+			if msg.Message == "/list" {
+				out.Message = ""
+				allConnsMutex.Lock()
+				for _, c := range allConns {
+					out.Message = out.Message + c.name + ", "
+				}
+				if len(out.Message) > 0 {
+					out.Message = out.Message[:len(out.Message) - 2]
+				}
+				allConnsMutex.Unlock()
 
-		out := ChatMessageOut{join.Name, msg.Message, getUnixTimeStr()}
-
-		allConnsMutex.Lock()
-		for _, c := range allConns {
-			if c.conn == conn {
-				continue
+				if err = conn.WriteJSON(out); err != nil {
+					fmt.Println(err)
+				}
 			}
-			if err = c.conn.WriteJSON(out); err != nil {
-				fmt.Println(err)
+		} else {
+			out := ChatMessageOut{join.Name, msg.Message, getUnixTimeStr()}
+			allConnsMutex.Lock()
+			for _, c := range allConns {
+				if c.conn == conn {
+					continue
+				}
+				if err = c.conn.WriteJSON(out); err != nil {
+					fmt.Println(err)
+				}
 			}
+			allConnsMutex.Unlock()
 		}
-		allConnsMutex.Unlock()
+
 	}
 
 	allConnsMutex.Lock()

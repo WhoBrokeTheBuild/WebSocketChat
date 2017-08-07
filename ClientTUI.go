@@ -85,7 +85,7 @@ func main() {
             msg := ChatMessageIn{}
     		err = conn.ReadJSON(&msg)
 			if err != nil {
-				return
+				break
 			}
 
             messages = append(messages, msg.Name + ": " + msg.Message)
