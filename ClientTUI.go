@@ -45,18 +45,13 @@ func main() {
     }
     defer termui.Close()
 
-    messages := []string{ }
-
     u := url.URL{ Scheme: "ws", Host: *host, Path: "/socket" }
-    messages = append(messages, "Connecting to " + u.String())
 
     list := termui.NewList()
     list.Width = termui.TermWidth()
     list.Height = termui.TermHeight() - 3
-	list.Items = messages
+	list.Items = []string{ "Connecting to " + u.String() }
 	list.BorderLabel = "Message Log"
-
-    messages = append(messages, "Hello, World!")
 
     input := termui.NewPar("")
     input.Y = termui.TermHeight() - 3
@@ -83,8 +78,7 @@ func main() {
 				return
 			}
 
-            messages = append(messages, msg.Name + ": " + msg.Message)
-        	list.Items = messages
+            list.Items = append(list.Items, msg.Name + ": " + msg.Message)
 
             termui.Clear()
             termui.Render(list, input)
