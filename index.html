@@ -12,10 +12,9 @@ Receive message { "name": "Their Name", "message": "Their Message", "time": "Tim
 <body>
 
     <div>
-        <form>
+        <form id="messenger">
             <label for="nameInput">Message:</label>
-            <input type="text" id="message" placeholder="I like your butt..."/><br />
-            <button type="button" id="sendBtn">Send</button>
+            <input type="text" id="message" placeholder="Hit enter to send."/><br />
         </form>
     </div>
     <div id="container"></div>
@@ -47,10 +46,11 @@ Receive message { "name": "Their Name", "message": "Their Message", "time": "Tim
                 }
                 return socket;
             }
-            $("#sendBtn").click(function (e) {
-                e.preventDefault();
-                ws.send(JSON.stringify({ message: $("#message").val() }));
-                console.log(JSON.stringify({ message: $("#message").val() }));
+            $("#messenger").submit(function (e) {
+              e.preventDefault();
+              ws.send(JSON.stringify({ message: $("#message").val() }));
+              $("#message").val("");
+              return false;
             });
             function getName() {
               var name = Cookies.get('name'); // => 'value'
