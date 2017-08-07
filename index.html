@@ -13,15 +13,14 @@ Receive message { "name": "Their Name", "message": "Their Message", "time": "Tim
 
     <div>
         <form>
-            <p id="test"></p>
-            <label for="nameInput">Name:</label>
-            <input type="text" id="name" placeholder="John Jacob Jingleheimer Schmidt"/><br />
+            <label for="nameInput">Message:</label>
+            <input type="text" id="message" placeholder="I like your butt..."/><br />
             <button type="button" id="sendBtn">Send</button>
         </form>
     </div>
     <div id="container"></div>
-
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.1.4/js.cookie.min.js"></script>
     <script type="text/javascript">
         $(function () {
             var ws;
@@ -34,10 +33,11 @@ Receive message { "name": "Their Name", "message": "Their Message", "time": "Tim
             function initWS() {
                 var  uName = getName();
                 var socket = new WebSocket("ws://{{.Host}}/socket"),
-                    container = $("#container")
+                    container = $("#container");
+                console.log ({name: uName})
                 socket.onopen = function() {
+                    ws.send(JSON.stringify({name: uName}))
                     container.append("<p>Socket is open</p>");
-                    socket.send({ "oname": uName });
                 };
                 socket.onmessage = function (e) {
                     container.append("<p> Got some shit:" + e.data + "</p>");
@@ -49,14 +49,18 @@ Receive message { "name": "Their Name", "message": "Their Message", "time": "Tim
             }
             $("#sendBtn").click(function (e) {
                 e.preventDefault();
-                ws.send({ name: $("name") });
+                ws.send(JSON.stringify({ message: $("message") }));
             });
             function getName() {
-              var name;
+              var name = Cookies.get('name'); // => 'value'
+              if (typeof name != "undefined"){
+                return name;
+              }
               do{
                 name = prompt("My name's Catbug! What's yours?", "");
               } while (name == null || name == "");
               alert("HAI " + name + "! Your my new friend now. We're having soft tacos later!")
+              Cookies.set('name', name, { expires: 365 });
               return name;
             }
         });
