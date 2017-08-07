@@ -11,17 +11,17 @@ import (
 )
 
 type JoinMessage struct {
-	name string
+	Name string `json:"name"`
 }
 
 type ChatMessageIn struct {
-	message string
+	Message string `json:"message"`
 }
 
 type ChatMessageOut struct {
-	name    string
-	message string
-	time    string
+	Name    string `json:"name"`
+	Message string `json:"message"`
+	Time    string `json:"time"`
 }
 
 type ChatConn struct {
@@ -31,6 +31,12 @@ type ChatConn struct {
 
 var allConnsMutex sync.RWMutex
 var allConns []ChatConn
+
+var upgrader = websocket.Upgrader{
+    ReadBufferSize:  1024,
+    WriteBufferSize: 1024,
+    CheckOrigin: func(r *http.Request) bool { return true },
+}
 
 func getUnixTimeStr() string {
 	return strconv.Itoa(int(time.Now().Unix()))
@@ -56,11 +62,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Origin") != "http://"+r.Host {
-		http.Error(w, "Origin not allowed", 403)
-		return
-	}
-	conn, err := websocket.Upgrade(w, r, w.Header(), 1024, 1024)
+	conn, err := upgrader.Upgrade(w, r, w.Header())
 	if err != nil {
 		http.Error(w, "Could not open websocket connection", http.StatusBadRequest)
 	}
@@ -79,14 +81,14 @@ func handleChat(conn *websocket.Conn) {
 	}
 
 	allConnsMutex.Lock()
-	allConns = append(allConns, ChatConn{join.name, conn})
+	allConns = append(allConns, ChatConn{join.Name, conn})
 	fmt.Printf("len = %d\n", len(allConns))
 
 	for _, c := range allConns {
 		if c.conn == conn {
 			continue
 		}
-		if err = c.conn.WriteJSON(ChatMessageOut{"Server", join.name + " has joined.", getUnixTimeStr()}); err != nil {
+		if err = c.conn.WriteJSON(ChatMessageOut{"Server", join.Name + " has joined.", getUnixTimeStr()}); err != nil {
 			fmt.Println(err)
 		}
 	}
@@ -103,7 +105,7 @@ func handleChat(conn *websocket.Conn) {
 
 		fmt.Printf("Got message: %#v\n", msg)
 
-		out := ChatMessageOut{join.name, msg.message, getUnixTimeStr()}
+		out := ChatMessageOut{join.Name, msg.Message, getUnixTimeStr()}
 
 		allConnsMutex.Lock()
 		for _, c := range allConns {
@@ -118,6 +120,14 @@ func handleChat(conn *websocket.Conn) {
 	}
 
 	allConnsMutex.Lock()
+	for _, c := range allConns {
+		if c.conn == conn {
+			continue
+		}
+		if err = c.conn.WriteJSON(ChatMessageOut{"Server", join.Name + " has left.", getUnixTimeStr()}); err != nil {
+			fmt.Println(err)
+		}
+	}
 	for i, c := range allConns {
 		if c.conn == conn {
 			allConns[i] = allConns[len(allConns)-1]
