@@ -24,6 +24,13 @@ type ChatMessageIn struct {
 	Time    string `json:"time"`
 }
 
+func max(a, b int) int {
+    if a >= b {
+        return a
+    }
+    return b
+}
+
 func getUnixTimeStr() string {
 	return strconv.Itoa(int(time.Now().Unix()))
 }
@@ -45,12 +52,15 @@ func main() {
     }
     defer termui.Close()
 
+    messages := []string{ }
+
     u := url.URL{ Scheme: "ws", Host: *host, Path: "/socket" }
+    messages = append(messages, "Connecting to " + u.String())
 
     list := termui.NewList()
     list.Width = termui.TermWidth()
     list.Height = termui.TermHeight() - 3
-	list.Items = []string{ "Connecting to " + u.String() }
+	list.Items = messages
 	list.BorderLabel = "Message Log"
 
     input := termui.NewPar("")
@@ -78,7 +88,8 @@ func main() {
 				return
 			}
 
-            list.Items = append(list.Items, msg.Name + ": " + msg.Message)
+            messages = append(messages, msg.Name + ": " + msg.Message)
+        	list.Items = messages[max(0, len(messages) - termui.TermHeight() + 5):]
 
             termui.Clear()
             termui.Render(list, input)
@@ -88,11 +99,12 @@ func main() {
 	}()
 
     termui.Handle("/sys/wnd/resize", func(termui.Event) {
-        list := termui.NewList()
         list.Width = termui.TermWidth()
         list.Height = termui.TermHeight() - 3
         input.Y = termui.TermHeight() - 3
         input.Width = termui.TermWidth()
+        list.Items = messages[max(0, len(messages) - termui.TermHeight() + 5):]
+
         termui.Clear()
         termui.Render(list, input)
     })
@@ -101,10 +113,14 @@ func main() {
         str := evt.Data.(termui.EvtKbd).KeyStr
 
         if str == "<enter>" {
+            if len(input.Text) == 0 { return }
+
             msg := ChatMessageOut{ input.Text }
             err = conn.WriteJSON(&msg)
 
-            list.Items = append(list.Items, *name + ": " + input.Text)
+            messages = append(messages, *name + ": " + input.Text)
+        	list.Items = messages[max(0, len(messages) - termui.TermHeight() + 5):]
+
             input.Text = ""
         }
 
