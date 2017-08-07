@@ -23,6 +23,8 @@ Receive message { "name": "Their Name", "message": "Their Message", "time": "Tim
     <script type="text/javascript">
         $(function () {
             var ws;
+            var name = getName();
+            var container = $("#container");
             if (window.WebSocket === undefined) {
                 $("#container").append("Your browser does not support WebSockets");
                 return;
@@ -30,12 +32,9 @@ Receive message { "name": "Their Name", "message": "Their Message", "time": "Tim
                 ws = initWS();
             }
             function initWS() {
-                var  uName = getName();
-                var socket = new WebSocket("ws://{{.Host}}/socket"),
-                    container = $("#container");
-                console.log ({name: uName})
+                var socket = new WebSocket("ws://{{.Host}}/socket");
                 socket.onopen = function() {
-                    ws.send(JSON.stringify({name: uName}))
+                    ws.send(JSON.stringify({name: name}));
                     container.append("<p>Socket is open</p>");
                 };
                 socket.onmessage = function (e) {
@@ -49,6 +48,7 @@ Receive message { "name": "Their Name", "message": "Their Message", "time": "Tim
             $("#messenger").submit(function (e) {
               e.preventDefault();
               ws.send(JSON.stringify({ message: $("#message").val() }));
+              container.append( "<p>" + name + ": " + $("#message").val() + "</p>");
               $("#message").val("");
               return false;
             });
