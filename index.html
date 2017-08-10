@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <!--
 Sign-on: { "name": "Their Name" }
 Send message: { "message": "Their Message" }
@@ -8,24 +9,25 @@ Receive message { "name": "Their Name", "message": "Their Message", "time": "Tim
 <html>
 <head>
     <title>WebSocket demo</title>
+    <link href="assets/style.css" rel="stylesheet">
 </head>
 <body>
+    <h1>#theonlyroom on {{.Host}}</h1>
+    <div class="messenger-wrap">
+        <div id="container">
 
-    <div>
-        <form id="messenger" data-host="{{.Host}}">
+        </div>
+        <form id="messenger" class="messenger" data-host="{{.Host}}">
             <label for="nameInput">Message:</label>
             <input type="text" id="message" placeholder="Hit enter to send."/><br />
         </form>
     </div>
-    <div id="container">
-
-    </div>
 
     <template id="ml">
         <div class="message-line__wrap">
-            <time id="ml-t"></time>
-            <span id="ml-n"></span>
-            <span id="ml-m"></span>
+            <time id="ml-t" class="message-line__time"></time>
+            <span id="ml-n" class="message-line__name"></span>
+            <span id="ml-m" class="message-line__message"></span>
         </div>
     </template>
 

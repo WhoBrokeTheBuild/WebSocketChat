@@ -1,0 +1,52 @@
+body, input {
+    font-family: 'Courier New', 'Courier', monospace;
+    font-size:12px;
+}
+.messenger-wrap {
+    width: 800px;
+    max-width: 100%;
+    max-height:calc(100vh - 5em);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 600px;
+    position: relative;
+    overflow: scroll;
+    border: 1px solid #CCC;
+    font-style: italic;
+}
+
+.messenger {
+    display: flex;
+    background: #CCC;
+    margin: 0; padding: 10px;
+    align-items: center;
+    font-style: normal;
+}
+
+.messenger input {
+    flex-grow: 1;
+}
+
+.message-line__wrap {
+    line-height: 2em;
+    font-style: normal;
+}
+
+.message-line__wrap:nth-child(2n) {
+    background: lemonchiffon;
+}
+
+.message-line__wrap:nth-child(2n+1) {
+    background: aliceblue;
+}
+
+.message-line__time {
+    opacity: 0.5;
+}
+.message-line__name {
+    font-weight: bold;
+}
+.message-line__name::after {
+    content: ":";
+}
