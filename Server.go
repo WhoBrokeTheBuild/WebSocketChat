@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
-	"strings"
+
+	"github.com/gorilla/websocket"
 )
 
 type JoinMessage struct {
@@ -34,9 +35,9 @@ var allConnsMutex sync.RWMutex
 var allConns []ChatConn
 
 var upgrader = websocket.Upgrader{
-    ReadBufferSize:  1024,
-    WriteBufferSize: 1024,
-    CheckOrigin: func(r *http.Request) bool { return true },
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 func getUnixTimeStr() string {
@@ -44,6 +45,8 @@ func getUnixTimeStr() string {
 }
 
 func main() {
+	fs := http.FileServer(http.Dir("./assets"))
+	http.Handle("/assets/", http.StripPrefix("/assets/", fs))
 	http.HandleFunc("/socket", wsHandler)
 	http.HandleFunc("/", rootHandler)
 
@@ -105,7 +108,7 @@ func handleChat(conn *websocket.Conn) {
 		}
 
 		if strings.HasPrefix(msg.Message, "/") {
-			out := ChatMessageOut{ "Server", "Command Not Found", getUnixTimeStr() }
+			out := ChatMessageOut{"Server", "Command Not Found", getUnixTimeStr()}
 			if msg.Message == "/list" {
 				out.Message = ""
 				allConnsMutex.Lock()
@@ -113,7 +116,7 @@ func handleChat(conn *websocket.Conn) {
 					out.Message = out.Message + c.name + ", "
 				}
 				if len(out.Message) > 0 {
-					out.Message = out.Message[:len(out.Message) - 2]
+					out.Message = out.Message[:len(out.Message)-2]
 				}
 				allConnsMutex.Unlock()
 
